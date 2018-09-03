@@ -187,6 +187,22 @@ require_once("config/database.php");
         <h3 id="informasi_username">Informasi Tempat</h3>
       </div>
       <div class="w3-container">
+      <?php
+        $error ="";
+        if(isset($_GET['file_update'])){
+          switch($_GET['file_update']){
+            case "besar": 
+                $error ="Gambar maksimal berukuran 300kb/gambar.";
+              break;
+            case "err": 
+              $error ="Gambar tidak bisa digunakan. Silahkan pilih gambar lain.";
+            break;
+            case "banyak": 
+              $error ="Jumlah gambar maksimal 5 gambar.";
+              break;
+          }
+        }
+      ?>
         <p class='w3-text-red' id='pesan_update_marker'><?=$error?></p>
         <form id="form_marker" name="form_marker" method="POST" action="delete.php">
           <input type="hidden" id="id_tempat_marker" name="id_tempat_marker" >
@@ -220,7 +236,7 @@ require_once("config/database.php");
         <h3>Pencarian Tempat</h3>
       </div>
       <div class="w3-container">
-        <form name="form_filter">
+        <form name="form_filter" onsubmit="return false">
           <p>
           <label>Kategori</label>
           <select class="w3-select w3-border w3-small" name="filter">
@@ -234,7 +250,7 @@ require_once("config/database.php");
       </div>
       <div class="w3-container">
         <p>
-        <button type="button" class="w3-btn w3-teal w3-small">Filter</button>
+        <button type="submit" class="w3-btn w3-teal w3-small" id="button_filter">Filter</button>
         <button type="button" class="w3-btn w3-red w3-small" onclick="el('modal_filter').style.display='none';">Close</button>
         </p>
         </form>
@@ -243,8 +259,7 @@ require_once("config/database.php");
   </div>
 
 	<script>
-    // EOF variabel
-    
+    const hitungan = 0;
     // Fungsi javascript
     // Method localstorage
     const localStorage = {
@@ -335,6 +350,9 @@ require_once("config/database.php");
       }), draggable: true});
       lingkaran = L.circle();
       
+      filter = null
+      cari = null
+      
       map = L.map('map').setView([-0.502106, 117.153709], 5);
       tile_layer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 18,
@@ -343,8 +361,10 @@ require_once("config/database.php");
       }).addTo(map);
     };
     my_event_map.prototype.resetSearch = function(){
+      cari = null
+      filter = null
+      this.searchMarkerByCircle(posisi.getLatLng())
       window.history.pushState(null, "Evantos Events", "index.php");
-      this.searchMarkerByCircle(posisi.getLatLng());
       el('kontrol_kiri_bawah').style.display = 'none';
     };
     my_event_map.prototype.toggleEditMarker = function(d){
@@ -368,18 +388,25 @@ require_once("config/database.php");
       var gambar = ['<div class="w3-row-padding w3-margin-top">']
       for(var x = 0; x < banyak_gambar; x++){
         gambar.push("<div class='w3-third'><div class='w3-card-2'><a href='gambar/" + d.gambar[x].nm_gambar + "'><img src='gambar/" + d.gambar[x].nm_gambar + "' class='w3-image w3-padding' style='height:250px;' /></a>");
-        <?php if(isset($_SESSION['username'])): ?>
-        gambar.push("<p class='w3-center w3-padding'>");
-        gambar.push("<form id='" + d.gambar[x].id_gambar + "' action='update-gambar.php' method='POST' enctype='multipart/form-data'>");
-        gambar.push("<input type='hidden' value='" + d.gambar[x].nm_gambar +"' name='nm_gambar' />");
-        gambar.push("<p class='w3-padding'><label>Ganti Gambar</label><input class='w3-input w3-small w3-border' type='file' name='update_gambar' /></p>");
-        gambar.push("<p class='w3-padding'>");
-        gambar.push("<button type='submit' class='w3-button w3-blue w3-small w3-left'>Update</button>");
-        gambar.push("<a href='delete-gambar.php?id_gambar=" + d.gambar[x].id_gambar + "&nm_gambar="+ d.gambar[x].nm_gambar +"' class='w3-button w3-red w3-small w3-right'>Hapus Gambar</a></p>");
-        gambar.push("<div class='w3-clear'></div><br/>");
-        gambar.push("</form>");
-        gambar.push("</p>");
-        <?php endif; ?>
+        if(auth.getUserInfo()){
+          el("button_delete_marker").style.display = "block";
+          el("button_edit_marker").style.display = "block";
+          if(auth.getUserInfo().id_user == d.gambar[x].id_user){
+            gambar.push("<p class='w3-center w3-padding'>");
+            gambar.push("<form id='" + d.gambar[x].id_gambar + "' action='update-gambar.php' method='POST' enctype='multipart/form-data'>");
+            gambar.push("<input type='hidden' value='" + d.gambar[x].nm_gambar +"' name='nm_gambar' />");
+            gambar.push("<p class='w3-padding'><label>Ganti Gambar</label><input class='w3-input w3-small w3-border' type='file' name='update_gambar' /></p>");
+            gambar.push("<p class='w3-padding'>");
+            gambar.push("<button type='submit' class='w3-button w3-blue w3-small w3-left'>Update</button>");
+            gambar.push("<a href='delete-gambar.php?id_gambar=" + d.gambar[x].id_gambar + "&nm_gambar="+ d.gambar[x].nm_gambar +"' class='w3-button w3-red w3-small w3-right'>Hapus Gambar</a></p>");
+            gambar.push("<div class='w3-clear'></div><br/>");
+            gambar.push("</form>");
+            gambar.push("</p>");
+          }
+        }else{
+          el("button_delete_marker").style.display = "none";
+          el("button_edit_marker").style.display = "none";
+        }
         gambar.push("</div></div>");
       }
       gambar.push('</div>');
@@ -422,17 +449,14 @@ require_once("config/database.php");
         },
       }).addTo(map);
     };
-    my_event_map.prototype.searchMarkerByCircle = function(x = {lat: null, lng: null}, reset = true, filter = null, cari = null){
+    my_event_map.prototype.searchMarkerByCircle = function(x = {lat: null, lng: null}, pfilter = null, pcari = null){
       var url = "get-marker.php?lat=" + x.lat + "&lng=" + x.lng;
-      if(reset == false){
+        if(pfilter) filter = pfilter
+        if(pcari) cari = pcari
         if(filter && cari){
           el("button_filter").innerHTML = "Mencari Data..."
           el("button_filter").disabled = true
           url += "&filter=" + filter + "&cari=" + cari
-        }
-      }
-      if(auth.getUserInfo()){
-        url += "&id_user=" + auth.getUserInfo("informasi_user").id_user;
       }
       var self = this
       axios.get(url)
@@ -456,14 +480,15 @@ require_once("config/database.php");
         })      
     };
     my_event_map.prototype.filterMarker = function(){
-      this.searchMarkerByCircle(posisi.getLatLng(), false, el("filter", "name").value, el("cari", "name").value);
+      this.searchMarkerByCircle(posisi.getLatLng(), el("filter", "name").value, el("cari", "name").value);
     };
     my_event_map.prototype.initUserLocation = function(){
       map.locate({setView: true, watch: true, maxZoom: 14});
       //Event ketika lokasi ditemukan
       map.on('locationfound', (function(e) {
+        hitungan++;
         el("button_search").style.display = "block";
-        this.searchMarkerByCircle(e.latlng, false);
+        this.searchMarkerByCircle(e.latlng);
         posisi.setLatLng(e.latlng).addTo(map); //set marker
         lingkaran.setLatLng(e.latlng).setRadius(radius_lingkaran).addTo(map) //set lingkaran
         
@@ -486,10 +511,7 @@ require_once("config/database.php");
           this.searchMarkerByCircle(e.target._latlng)
         }).bind(this))
         
-        map.setZoom(14);
-        map.setView(e.latlng);
-        
-        //~ if(auth.getUserInfo()){
+        if(auth.getUserInfo()){
           //add map controlls
           map.pm.addControls({
               position: 'topleft', // toolbar position, options are 'topleft', 'topright', 'bottomleft', 'bottomright'
@@ -497,9 +519,9 @@ require_once("config/database.php");
               drawPolyline: false, // adds button to draw a polyline
               drawRectangle: false, // adds button to draw a rectangle
               drawPolygon: false, // adds button to draw a polygon
-              drawCircle: true, // adds button to draw a cricle
+              drawCircle: false, // adds button to draw a cricle
               cutPolygon: false, // adds button to cut a hole in a polygon
-              editMode: true, // adds button to toggle edit mode for all layers
+              editMode: false, // adds button to toggle edit mode for all layers
               removalMode: false, // adds a button to remove layers
           });
         
@@ -523,18 +545,33 @@ require_once("config/database.php");
           if(el("leaflet-pm-toolbar leaflet-bar leaflet-control", "class").length == 1){
             el("leaflet-pm-toolbar leaflet-bar leaflet-control", "class")[0].style.display = "block";
           }
-        //~ }
+        }
         }).bind(this));
         
         //Event ketika lokasi tidak ditemukan
         map.on('locationerror', function(){
+          if(el("leaflet-pm-toolbar leaflet-bar leaflet-control", "class").length == 1){
+            el("leaflet-pm-toolbar leaflet-bar leaflet-control", "class")[0].style.display = "none";
+          }
           el("button_search").style.display = "none";
-          alert("Lokasi tidak ditemukan. Silahkan refresh halaman ini.");
+          //~ alert("Lokasi tidak ditemukan. Silahkan refresh halaman ini.");
         });   
     };
       
     // Method login dan registrasi
     const auth = {
+      cekAuth(){
+        axios.get("cek-login.php")
+          .then(function(res){
+            if(res.data.status == true){
+              localStorage.set("informasi_user", res.data.data);
+              event.pageUser();
+            }else{
+              event.pageVisitor();
+            }
+            event_map.initUserLocation();
+          })
+      },
       login(username, password, url_login){
         el("button_login").innerHTML = "Tunggu Sebentar...";
         el("button_login").disabled = true;
@@ -544,6 +581,7 @@ require_once("config/database.php");
               localStorage.set("informasi_user", res.data.data);
               event.toggleLoginModal();
               event.pageUser();
+              event_map.searchMarkerByCircle(posisi.getLatLng())
             }else{
               el("pesan_login").innerHTML = res.data.message;
               el("pesan_login").className = "w3-text-red";
@@ -583,8 +621,14 @@ require_once("config/database.php");
           })
       },
       logout(){
-        localStorage.clearAll();
-        event.pageVisitor();
+        axios.post("logout.php", this.getUserInfo())
+          .then(function(res){
+            if(res.data.status == true){
+              localStorage.clearAll();
+              event.pageVisitor();
+              event_map.searchMarkerByCircle(posisi.getLatLng());
+            }
+          })
       },
       getUserInfo(){
         return localStorage.get("informasi_user");
@@ -625,6 +669,7 @@ require_once("config/database.php");
     }
     //EOF Fungsi Javascript
     
+    
     // Event Listener
     el("form_login", "name").addEventListener("submit", function(){
       auth.login(elForm("form_login","username").value, elForm("form_login","password").value, "login.php")
@@ -639,25 +684,23 @@ require_once("config/database.php");
     el("button_gps").addEventListener("click", function(){ map.locate({setView: true, watch: true, maxZoom: 14}); });
     el("button_batal_marker").addEventListener("click", function(){
        el('modal_tambah').style.display='none';
-       refreshMap();
+       event_map.refreshMap();
     });
     el("button_edit_marker").addEventListener("click", function(){
-      toggleEditMarker(current_marker)
+      event_map.toggleEditMarker(current_marker)
     });
     el("form_filter", "name").addEventListener("submit", function(){
-      filterMarker()
+      event_map.filterMarker()
     });
+    
+    el("kontrol_filter_caption").addEventListener("click", function(){
+      event_map.resetSearch();
+    })
     
     var event = new my_event();
     var event_map = new my_event_map(1000);
-    // Main
-    if(auth.getUserInfo()){
-      event.pageUser();
-    }else{
-      event.pageVisitor();
-    }
     
-    event_map.initUserLocation();
+    auth.cekAuth();    
 	</script>
  </body>
 </html>

@@ -4,7 +4,7 @@ if(isset($_GET['lat']) && isset($_GET['lng'])){
   // Radius lingkaran 1 km
   $radius_lingkaran = 1;
   $id_user = "";
-  if(isset($_GET['id_user'])) $id_user = " AND a.id_user = ".$_GET['id_user'];
+  if(isset($_SESSION['id_user'])) $id_user = " AND a.id_user = ".$_SESSION['id_user'];
   require_once("config/database.php");
   $latitude = $db->quote($_GET['lat']);
   $longitude = $db->quote($_GET['lng']);

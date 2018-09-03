@@ -17,6 +17,8 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
         'username'  => $login['username'],
         'id_user'  => $login['id_user']
     );
+    $_SESSION['username'] = $login['username'];
+    $_SESSION['id_user'] = $login['id_user'];
 	}
   echo json_encode($hasil);
 }
