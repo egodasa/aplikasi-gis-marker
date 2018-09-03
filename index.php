@@ -384,7 +384,7 @@ require_once("config/database.php");
       }
       gambar.push('</div>');
       el("gambar_marker").innerHTML = gambar.join("");
-      el("detail_marker").style.display = "block"
+      el("modal_detail_marker").style.display = "block"
     };
     my_event_map.prototype.refreshMap = function(){
       if(currentLayerJSON) {
@@ -402,13 +402,14 @@ require_once("config/database.php");
       for(var x =0; x < banyak_marker; x++){
         marker_geojson.push(turf.point( [marker[x].koordinat_lng, marker[x].koordinat_lat], marker[x] ))
       }
+      var self = this
       //Menjalankan geojson menggunakan leaflet
       layer_marker = L.geoJSON(turf.featureCollection(marker_geojson), {
         //Method yang dijalankan ketika marker diklik
         onEachFeature: function (feature, layer) {
           //Menampilkan pesan berisi content pada saat diklik
           layer.on("click", function (k){
-            getDetailMarker(feature.properties);
+            self.getDetailMarker(feature.properties);
           })
         },
         pointToLayer: function(feature, latlng) {
@@ -458,7 +459,7 @@ require_once("config/database.php");
       this.searchMarkerByCircle(posisi.getLatLng(), false, el("filter", "name").value, el("cari", "name").value);
     };
     my_event_map.prototype.initUserLocation = function(){
-      map.locate({setView: false, watch: true, maxZoom: 14});
+      map.locate({setView: true, watch: true, maxZoom: 14});
       //Event ketika lokasi ditemukan
       map.on('locationfound', (function(e) {
         el("button_search").style.display = "block";
