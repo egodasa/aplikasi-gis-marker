@@ -70,7 +70,7 @@ require_once("config/database.php");
   <div class="leaflet-control-container">
     <div class="leaflet-bottom leaflet-right" style="z-index: 2;margin-bottom:30px;">
       <div class="leaflet-control-layers leaflet-control-layers-expanded leaflet-control">
-        <button type="w3-btn w3-small w3-light-gray" onclick="map.locate({setView: true, watch: true, maxZoom: 18}); "><img src="dist/css/images/marker-person.png" width="30" height="30"></button>
+        <button type="w3-btn w3-small w3-light-gray" onclick="map.locate({setView: true, watch: true, maxZoom: 13}); "><img src="dist/css/images/marker-person.png" width="30" height="30"></button>
       </div>
     </div>
   </div>
@@ -316,7 +316,7 @@ require_once("config/database.php");
         popupAnchor:  [1, -24],
         iconUrl: 'dist/css/images/marker-person.png'
     }), draggable: true});
-    var lingkaran = L.circle();
+    var lingkaran = L.circle(null, {color: "#FF00B5", fill: "#000000", fillOpacity: 0.3});
     // EOF variabel
     
     // Fungsi javascript
@@ -485,7 +485,7 @@ require_once("config/database.php");
     // initUserLocation()
     // Method untuk mengaktifkan lokasi user
     function initUserLocation(){
-      map.locate({setView: false, watch: true, maxZoom: 18});
+      map.locate({setView: true, watch: true, maxZoom: 14});
       //Event ketika lokasi ditemukan
       map.on('locationfound', function(e) {
         el("button_search").style.display = "block";
@@ -493,8 +493,10 @@ require_once("config/database.php");
         posisi.setLatLng(e.latlng).addTo(map); //set marker
         lingkaran.setLatLng(e.latlng).setRadius(radius_lingkaran).addTo(map) //set lingkaran
         
+        
         // Event pas marker posisi user digeser
         posisi.on("dragstart",function(e){
+          map.pm.enable
           if(el("leaflet-pm-toolbar leaflet-bar leaflet-control", "class").length == 1){
             el("leaflet-pm-toolbar leaflet-bar leaflet-control", "class")[0].style.display = "none";
           }
@@ -512,7 +514,7 @@ require_once("config/database.php");
           searchMarkerByCircle(e.target._latlng)
         })
         
-        map.setZoom(15);
+        map.setZoom(14);
         map.setView(e.latlng);
         
         <?php if(isset($_SESSION['username'])):?>
@@ -528,12 +530,11 @@ require_once("config/database.php");
               editMode: false, // adds button to toggle edit mode for all layers
               removalMode: false, // adds a button to remove layers
           });
-        
           //event ketika marker baru ditambah
           map.on('pm:create', function(e){
               el("tambah_marker").action = "tambah.php";
               el("caption_marker").innerHTML = "Tambah Tempat Baru";
-              if(Jarak(e.layer._latlng, posisi.getLatLng()) >= 1){
+              if(Jarak(e.layer._latlng, posisi.getLatLng()) >= (radius_lingkaran)/1000){
                 alert("Marker hanya bisa ditempatkan radius maksimal 1Km dari tempat Anda!")
                 e.layer.remove()
                 refreshMap()
