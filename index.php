@@ -433,9 +433,10 @@ require_once("config/database.php");
       if(auth.getUserInfo()){
         url += "&id_user=" + auth.getUserInfo("informasi_user").id_user;
       }
+      var self = this
       axios.get(url)
         .then(function(res){
-          this.initLayerMarker(res.data);
+          self.initLayerMarker(res.data);
           if(filter && cari){
             el("modal_filter").style.display = "none"
             el("kontrol_kiri_bawah").style.display = "block"
@@ -457,7 +458,7 @@ require_once("config/database.php");
       this.searchMarkerByCircle(posisi.getLatLng(), false, el("filter", "name").value, el("cari", "name").value);
     };
     my_event_map.prototype.initUserLocation = function(){
-      map.locate({setView: false, watch: true, maxZoom: 18});
+      map.locate({setView: false, watch: true, maxZoom: 14});
       //Event ketika lokasi ditemukan
       map.on('locationfound', (function(e) {
         el("button_search").style.display = "block";
@@ -470,7 +471,7 @@ require_once("config/database.php");
           if(el("leaflet-pm-toolbar leaflet-bar leaflet-control", "class").length == 1){
             el("leaflet-pm-toolbar leaflet-bar leaflet-control", "class")[0].style.display = "none";
           }
-          this.map.stopLocate()
+          map.stopLocate()
         }).bind(this))
         
         // Event pas marker posisi bergeser
@@ -484,7 +485,7 @@ require_once("config/database.php");
           this.searchMarkerByCircle(e.target._latlng)
         }).bind(this))
         
-        map.setZoom(15);
+        map.setZoom(14);
         map.setView(e.latlng);
         
         //~ if(auth.getUserInfo()){
@@ -634,7 +635,7 @@ require_once("config/database.php");
     el("button_logout").addEventListener("click", function(){ auth.logout(); });
     el("button_sign_in").addEventListener("click", function(){ event.toggleLoginModal(); });
     el("button_sign_up").addEventListener("click", function(){ event.toggleRegistrasiModal(); });
-    el("button_gps").addEventListener("click", function(){ map.locate({setView: true, watch: true, maxZoom: 18}); });
+    el("button_gps").addEventListener("click", function(){ map.locate({setView: true, watch: true, maxZoom: 14}); });
     el("button_batal_marker").addEventListener("click", function(){
        el('modal_tambah').style.display='none';
        refreshMap();
