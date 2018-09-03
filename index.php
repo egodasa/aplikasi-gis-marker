@@ -70,7 +70,7 @@ require_once("config/database.php");
   <div class="leaflet-control-container">
     <div class="leaflet-bottom leaflet-right" style="z-index: 2;margin-bottom:30px;">
       <div class="leaflet-control-layers leaflet-control-layers-expanded leaflet-control">
-        <button type="w3-btn w3-small w3-light-gray" onclick="map.locate({setView: true, watch: true, maxZoom: 13}); "><img src="dist/css/images/marker-person.png" width="30" height="30"></button>
+        <button type="w3-btn w3-small w3-light-gray" onclick="map.locate({setView: false, watch: true, maxZoom: 14}); "><img src="dist/css/images/marker-person.png" width="30" height="30"></button>
       </div>
     </div>
   </div>
@@ -317,6 +317,8 @@ require_once("config/database.php");
         iconUrl: 'dist/css/images/marker-person.png'
     }), draggable: true});
     var lingkaran = L.circle(null, {color: "#FF00B5", fill: "#000000", fillOpacity: 0.3});
+    var filter = null
+    var cari = null
     // EOF variabel
     
     // Fungsi javascript
@@ -345,6 +347,8 @@ require_once("config/database.php");
       window.history.pushState(null, "Evantos Events", "index.php");
       searchMarkerByCircle(posisi.getLatLng());
       el('control_filter').style.display = 'none';
+      cari = null
+      filter = null
     }
     
     // MkeKm(m int)
@@ -448,14 +452,14 @@ require_once("config/database.php");
     
     // searchMarkerByCircle(x Object{lat, lng})
     // Menampilkan daftar marker dalam lingkaran saja, jika reset bernilai true, filter akan hilang
-    function searchMarkerByCircle(x = {lat: null, lng: null}, reset = true, filter = null, cari = null){
+    function searchMarkerByCircle(x = {lat: null, lng: null}, param_filter = null, param_cari = null){
+      if(param_filter) filter = param_filter;
+      if(param_cari) filter = param_cari;
       var url = "get-marker.php?lat=" + x.lat + "&lng=" + x.lng;
-      if(reset == false){
         if(filter && cari){
           el("button_filter").innerHTML = "Mencari Data..."
           el("button_filter").disabled = true
           url += "&filter=" + filter + "&cari=" + cari
-        }
       }
       axios.get(url)
         .then(function(res){
@@ -479,24 +483,27 @@ require_once("config/database.php");
     // filterMarker()
     // Melakukan filter marker
     function filterMarker(){
-      searchMarkerByCircle(posisi.getLatLng(), false, el("filter", "name").value, el("cari", "name").value);
+      searchMarkerByCircle(posisi.getLatLng(), el("filter", "name").value, el("cari", "name").value);
     }
     
     // initUserLocation()
     // Method untuk mengaktifkan lokasi user
     function initUserLocation(){
-      map.locate({setView: true, watch: true, maxZoom: 14});
+      map.locate({setView: false, watch: true, maxZoom: 14});
       //Event ketika lokasi ditemukan
       map.on('locationfound', function(e) {
+        if(el("leaflet-pm-toolbar leaflet-bar leaflet-control", "class")[0]){
+          el("leaflet-pm-toolbar leaflet-bar leaflet-control", "class")[0].style.display = "block";
+        }
         el("button_search").style.display = "block";
-        searchMarkerByCircle(e.latlng, false);
+        searchMarkerByCircle(e.latlng);
         posisi.setLatLng(e.latlng).addTo(map); //set marker
         lingkaran.setLatLng(e.latlng).setRadius(radius_lingkaran).addTo(map) //set lingkaran
         
+        map.setView(e.latlng)
         
         // Event pas marker posisi user digeser
         posisi.on("dragstart",function(e){
-          map.pm.enable
           if(el("leaflet-pm-toolbar leaflet-bar leaflet-control", "class").length == 1){
             el("leaflet-pm-toolbar leaflet-bar leaflet-control", "class")[0].style.display = "none";
           }
@@ -510,55 +517,20 @@ require_once("config/database.php");
         
         //Event saat proses bergeser berakhir
         posisi.on("dragend",function(e){
+          map.stopLocate()
           map.removeLayer(layer_marker);
           searchMarkerByCircle(e.target._latlng)
         })
-        
-        map.setZoom(14);
-        map.setView(e.latlng);
-        
-        <?php if(isset($_SESSION['username'])):?>
-          //add map controlls
-          map.pm.addControls({
-              position: 'topleft', // toolbar position, options are 'topleft', 'topright', 'bottomleft', 'bottomright'
-              drawMarker: <?php echo isset($_SESSION['username']) ? "true" : "false"; ?>, // adds button to draw markers
-              drawPolyline: false, // adds button to draw a polyline
-              drawRectangle: false, // adds button to draw a rectangle
-              drawPolygon: false, // adds button to draw a polygon
-              drawCircle: false, // adds button to draw a cricle
-              cutPolygon: false, // adds button to cut a hole in a polygon
-              editMode: false, // adds button to toggle edit mode for all layers
-              removalMode: false, // adds a button to remove layers
-          });
-          //event ketika marker baru ditambah
-          map.on('pm:create', function(e){
-              el("tambah_marker").action = "tambah.php";
-              el("caption_marker").innerHTML = "Tambah Tempat Baru";
-              if(Jarak(e.layer._latlng, posisi.getLatLng()) >= (radius_lingkaran)/1000){
-                alert("Marker hanya bisa ditempatkan radius maksimal 1Km dari tempat Anda!")
-                e.layer.remove()
-                refreshMap()
-              }else{
-                //layer dimasukkan ke variabel agar bisa dihapus
-                currentLayerJSON = e;
-                el("koordinat_lat").value = e.layer._latlng.lat
-                el("koordinat_lng").value = e.layer._latlng.lng
-                el("tambah").style.display = 'block'
-              }
-            });
-            
-          if(el("leaflet-pm-toolbar leaflet-bar leaflet-control", "class").length == 1){
-            el("leaflet-pm-toolbar leaflet-bar leaflet-control", "class")[0].style.display = "block";
-          }
-          <?php endif; ?>
         });
         
         //Event ketika lokasi tidak ditemukan
         map.on('locationerror', function(){
+          if(el("leaflet-pm-toolbar leaflet-bar leaflet-control", "class")[0]){
+            el("leaflet-pm-toolbar leaflet-bar leaflet-control", "class")[0].style.display = "none";
+          }
           el("button_search").style.display = "none";
-          alert("Lokasi tidak ditemukan. Silahkan refresh halaman ini.");
+          //~ alert("Lokasi tidak ditemukan. Silahkan refresh halaman ini.");
         })
-        
     }
     //EOF Fungsi Javascript
     
@@ -570,6 +542,38 @@ require_once("config/database.php");
     noWrap: false,
     attribution: 'Data by <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> | By Simon'
 		}).addTo(map);
+    
+    map.pm.addControls({
+        position: 'topleft', // toolbar position, options are 'topleft', 'topright', 'bottomleft', 'bottomright'
+        drawMarker: <?php echo isset($_SESSION['username']) ? "true" : "false"; ?>, // adds button to draw markers
+        drawPolyline: false, // adds button to draw a polyline
+        drawRectangle: false, // adds button to draw a rectangle
+        drawPolygon: false, // adds button to draw a polygon
+        drawCircle: false, // adds button to draw a cricle
+        cutPolygon: false, // adds button to cut a hole in a polygon
+        editMode: false, // adds button to toggle edit mode for all layers
+        removalMode: false, // adds a button to remove layers
+    });
+    //event ketika marker baru ditambah
+    map.on('pm:create', function(e){
+        el("tambah_marker").action = "tambah.php";
+        el("caption_marker").innerHTML = "Tambah Tempat Baru";
+        if(Jarak(e.layer._latlng, posisi.getLatLng()) >= (radius_lingkaran)/1000){
+          alert("Marker hanya bisa ditempatkan radius maksimal 1Km dari tempat Anda!")
+          e.layer.remove()
+          refreshMap()
+        }else{
+          //layer dimasukkan ke variabel agar bisa dihapus
+          currentLayerJSON = e;
+          el("koordinat_lat").value = e.layer._latlng.lat
+          el("koordinat_lng").value = e.layer._latlng.lng
+          el("tambah").style.display = 'block'
+        }
+      });
+      
+    if(el("leaflet-pm-toolbar leaflet-bar leaflet-control", "class")[0]){
+      el("leaflet-pm-toolbar leaflet-bar leaflet-control", "class")[0].style.display = "none";
+    }
     
     initUserLocation();
     
