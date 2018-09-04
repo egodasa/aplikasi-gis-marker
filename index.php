@@ -552,7 +552,6 @@ require_once("config/database.php");
       map.locate({setView: false, watch: true, maxZoom: 15});
       //Event ketika lokasi ditemukan
       map.on('locationfound', (function(e) {
-        console.log("Radius posisi belum set found " + MkeKm(radius_lingkaran))
         map.setMinZoom(13)
         if(auth.getUserInfo){
           if(el("leaflet-pm-toolbar leaflet-bar leaflet-control", "class").length == 1){
@@ -569,8 +568,6 @@ require_once("config/database.php");
         posisi.setLatLng(e.latlng).addTo(map); //set marker
         pinggiran_lingkaran.setLatLng(latLngFromPointWithDistance(e.latlng.lat, e.latlng.lng, MkeKm(radius_lingkaran), 90)).addTo(map); //set marker penggeser lingkaran
         lingkaran.setLatLng(e.latlng).setRadius(radius_lingkaran).addTo(map) //set lingkaran
-        console.log("Radius setelah diset" + MkeKm(radius_lingkaran))
-          console.log([posisi.getLatLng(), pinggiran_lingkaran.getLatLng()])
         
         // Event pas marker posisi user digeser
         posisi.on("dragstart", (event_map_item.posisi.onDragStart).bind(this))
@@ -616,10 +613,8 @@ require_once("config/database.php");
       map.stopLocate()
     }
     my_event_map_item.prototype.posisi.onMove = function(e){
-      console.log("Radius posisi atas on move " + MkeKm(radius_lingkaran))
       lingkaran.setLatLng(e.latlng) //buat lingkaran setiap bergeser
       pinggiran_lingkaran.setLatLng(latLngFromPointWithDistance(e.latlng.lat, e.latlng.lng, MkeKm(radius_lingkaran), 90))
-      console.log("Radius posisi bawah on move " + MkeKm(radius_lingkaran))
     }
     my_event_map_item.prototype.posisi.onDragEnd = function(e){
       pinggiran_lingkaran.on("move",my_event_map_item.prototype.pinggiran_lingkaran.onMove)
@@ -635,18 +630,17 @@ require_once("config/database.php");
       map.stopLocate()
     }
     my_event_map_item.prototype.pinggiran_lingkaran.onMove = function(e){
-      //~ console.log("Radius pinggiran atas on move " + MkeKm(radius_lingkaran))
-      console.log([posisi.getLatLng(), pinggiran_lingkaran.getLatLng()])
       radius_lingkaran = L.latLng(posisi.getLatLng()).distanceTo(pinggiran_lingkaran.getLatLng());
-      lingkaran.setRadius(radius_lingkaran)
-      //~ console.log("Radius pinggiran bawah on move " + MkeKm(radius_lingkaran))
+      if(radius_lingkaran < 20000){
+        lingkaran.setRadius(radius_lingkaran)
+      }
     }
     my_event_map_item.prototype.pinggiran_lingkaran.onDragEnd = function(e){
       if(layer_marker){
         map.removeLayer(layer_marker)
       }
       map.stopLocate()
-      this.searchMarkerByCircle(e.target._latlng)
+      this.searchMarkerByCircle(posisi.getLatLng())
     }
     
     // Method login dan registrasi
