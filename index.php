@@ -135,15 +135,15 @@ require_once("config/database.php");
     </div>
   
     <!-- Modal Tambah Marker -->
-    <div id="modal_tambah_marker" class="w3-modal" style="display: none; z-index: 3;" enctype="multipart/form-data">
+    <div id="modal_tambah_marker" class="w3-modal" style="display: none; z-index: 3;">
       <div class="w3-modal-content">
         <div class="w3-container">
-          <span onclick="el('modal_tambah_marker').style.display='none';" class="w3-closebtn w3-right">&times;</span>
+          <span onclick="el('modal_tambah_marker').style.display='none'; event_map.refreshMap(); map.pm.disableDraw();" class="w3-closebtn w3-right">&times;</span>
           <h3 id="caption_marker">Tambah Tempat Baru</h3>
         </div>
         <div class="w3-container">
           <p class='w3-text-red' id='pesan_tambah_marker'></p>
-          <form id="tambah_marker" method="POST" action="tambah.php" enctype="multipart/form-data">
+          <form name="form_tambah_marker" method="POST" action="tambah.php" enctype="multipart/form-data">
             <input type="hidden" id="id_user" name="id_user" >
             <input type="hidden" id="id_tempat" name="id_tempat">
             <input type="hidden" id="koordinat_lat" name="koordinat_lat">
@@ -167,7 +167,7 @@ require_once("config/database.php");
             </select>
             </p>
             <p><label>Deskripsi</label> <textarea class="w3-input w3-border w3-small" id="deskripsi" name="deskripsi"></textarea></p>
-            <p><label>Gambar (Maks. 5 Gambar)</label> <input class="w3-input w3-border w3-small" type="file" accept="image/jpeg, images/jpg" id="gambar" name="gambar[]" multiple></p>
+            <p id="input_gambar"><label>Gambar (Maks. 5 Gambar)</label> <input class="w3-input w3-border w3-small" type="file" accept="image/jpeg, images/jpg" id="gambar" name="gambar[]" multiple></p>
         </div>
         <div class="w3-container">
           <p>
@@ -259,9 +259,66 @@ require_once("config/database.php");
   </div>
 
 	<script>
-    const hitungan = 0;
+    var hitungan = 0;
     // Fungsi javascript
     // Method localstorage
+    
+    // el(x string)
+    // Method untuk mengambil instance DOM secara singkat
+    function el(x, tipe="id"){
+      switch(tipe){
+        case "id":
+          return document.getElementById(x);
+          break;
+        case "class":
+          return document.getElementsByClassName(x);
+          break;
+        case "name":
+          return document.getElementsByName(x)[0];
+          break;
+        default:
+          return null;
+      }
+    }
+    function elForm(x, y){
+      return document[x][y];
+    }
+    
+    // MkeKm(m int)
+    // Method untuk konversi meter ke kilometer
+    function MkeKm(m){
+      return (m/1000).toFixed(6)
+    }
+    
+    // Jarak(arr1 array atau Object{lat,lng}, arr2 array atau Object{lat,lng})
+    // Mengetahui jarak dari satu titik ke titik lain (Km)
+    function Jarak(arr1, arr2){
+      return MkeKm(L.latLng(arr1).distanceTo(L.latLng(arr2)))
+    }
+    
+    function latLngFromPointWithDistance(lat1,long1,d,angle){
+      // Earth Radious in KM
+      var R = 6378.14;
+  
+      // Degree to Radian
+      var latitude1 = lat1 * (Math.PI/180);
+      var longitude1 = long1 * (Math.PI/180);
+      var brng = angle * (Math.PI/180);
+  
+      var latitude2 = Math.asin(Math.sin(latitude1)*Math.cos(d/R) + Math.cos(latitude1)*Math.sin(d/R)*Math.cos(brng));
+      var longitude2 = longitude1 + Math.atan2(Math.sin(brng)*Math.sin(d/R)*Math.cos(latitude1),Math.cos(d/R)-Math.sin(latitude1)*Math.sin(latitude2));
+  
+      // back to degrees
+      latitude2 = latitude2 * (180/Math.PI);
+      longitude2 = longitude2 * (180/Math.PI);
+  
+      //6 decimal for Leaflet and other system compatibility
+      lat2 = latitude2.toFixed(6);
+      long2 = longitude2.toFixed(6);
+    
+      // Push in array and get back
+      return [lat2, long2];
+    }
     const localStorage = {
       set(x,y){
           store.set(x,y)
@@ -348,6 +405,14 @@ require_once("config/database.php");
           popupAnchor:  [1, -24],
           iconUrl: 'dist/css/images/marker-person.png'
       }), draggable: true});
+      
+      pinggiran_lingkaran = L.marker([null, null], {icon: L.icon({
+          iconSize: [40, 40],
+          iconAnchor: [13, 27],
+          popupAnchor:  [1, -24],
+          iconUrl: 'dist/css/images/icon-arrow.png'
+      }), draggable: true});
+      
       lingkaran = L.circle();
       
       filter = null
@@ -355,6 +420,7 @@ require_once("config/database.php");
       
       map = L.map('map').setView([-0.502106, 117.153709], 5);
       tile_layer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      minZoom: 5,
       maxZoom: 18,
       noWrap: false,
       attribution: 'Data by <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> | By Simon & Fritz'
@@ -368,14 +434,15 @@ require_once("config/database.php");
       el('kontrol_kiri_bawah').style.display = 'none';
     };
     my_event_map.prototype.toggleEditMarker = function(d){
-      el("modal_detail_marker").style.display = "none"
-      el("modal_tambah_marker").style.display = "block"
+      el("input_gambar").style.display = "none";
+      el("modal_detail_marker").style.display = "none";
+      el("modal_tambah_marker").style.display = "block";
       el("form_marker","name").action = "edit.php";
       el("caption_marker").innerHTML = "Edit Informasi Tempat";
-      el("id_tempat").value = d.id_tempat
-      el("judul").value = d.judul
-      el("kategori").value = d.kategori
-      el("deskripsi").value = d.deskripsi
+      el("id_tempat").value = d.id_tempat;
+      el("judul").value = d.judul;
+      el("kategori").value = d.kategori;
+      el("deskripsi").value = d.deskripsi;
     };
     my_event_map.prototype.getDetailMarker = function(d){
       var banyak_gambar = d.gambar.length;
@@ -389,20 +456,18 @@ require_once("config/database.php");
       for(var x = 0; x < banyak_gambar; x++){
         gambar.push("<div class='w3-third'><div class='w3-card-2'><a href='gambar/" + d.gambar[x].nm_gambar + "'><img src='gambar/" + d.gambar[x].nm_gambar + "' class='w3-image w3-padding' style='height:250px;' /></a>");
         if(auth.getUserInfo()){
-          el("button_delete_marker").style.display = "block";
-          el("button_edit_marker").style.display = "block";
-          if(auth.getUserInfo().id_user == d.gambar[x].id_user){
-            gambar.push("<p class='w3-center w3-padding'>");
-            gambar.push("<form id='" + d.gambar[x].id_gambar + "' action='update-gambar.php' method='POST' enctype='multipart/form-data'>");
-            gambar.push("<input type='hidden' value='" + d.gambar[x].nm_gambar +"' name='nm_gambar' />");
-            gambar.push("<p class='w3-padding'><label>Ganti Gambar</label><input class='w3-input w3-small w3-border' type='file' name='update_gambar' /></p>");
-            gambar.push("<p class='w3-padding'>");
-            gambar.push("<button type='submit' class='w3-button w3-blue w3-small w3-left'>Update</button>");
-            gambar.push("<a href='delete-gambar.php?id_gambar=" + d.gambar[x].id_gambar + "&nm_gambar="+ d.gambar[x].nm_gambar +"' class='w3-button w3-red w3-small w3-right'>Hapus Gambar</a></p>");
-            gambar.push("<div class='w3-clear'></div><br/>");
-            gambar.push("</form>");
-            gambar.push("</p>");
-          }
+          el("button_delete_marker").style.display = "inline-block";
+          el("button_edit_marker").style.display = "inline-block";
+          gambar.push("<p class='w3-center w3-padding'>");
+          gambar.push("<form id='" + d.gambar[x].id_gambar + "' action='update-gambar.php' method='POST' enctype='multipart/form-data'>");
+          gambar.push("<input type='hidden' value='" + d.gambar[x].nm_gambar +"' name='nm_gambar' />");
+          gambar.push("<p class='w3-padding'><label>Ganti Gambar</label><input class='w3-input w3-small w3-border' type='file' name='update_gambar' /></p>");
+          gambar.push("<p class='w3-padding'>");
+          gambar.push("<button type='submit' class='w3-button w3-blue w3-small w3-left'>Update</button>");
+          gambar.push("<a href='delete-gambar.php?id_gambar=" + d.gambar[x].id_gambar + "&nm_gambar="+ d.gambar[x].nm_gambar +"' class='w3-button w3-red w3-small w3-right'>Hapus Gambar</a></p>");
+          gambar.push("<div class='w3-clear'></div><br/>");
+          gambar.push("</form>");
+          gambar.push("</p>");
         }else{
           el("button_delete_marker").style.display = "none";
           el("button_edit_marker").style.display = "none";
@@ -451,13 +516,14 @@ require_once("config/database.php");
     };
     my_event_map.prototype.searchMarkerByCircle = function(x = {lat: null, lng: null}, pfilter = null, pcari = null){
       var url = "get-marker.php?lat=" + x.lat + "&lng=" + x.lng;
-        if(pfilter) filter = pfilter
-        if(pcari) cari = pcari
-        if(filter && cari){
-          el("button_filter").innerHTML = "Mencari Data..."
-          el("button_filter").disabled = true
-          url += "&filter=" + filter + "&cari=" + cari
+      if(pfilter) filter = pfilter
+      if(pcari) cari = pcari
+      if(filter && cari){
+        el("button_filter").innerHTML = "Mencari Data..."
+        el("button_filter").disabled = true
+        url += "&filter=" + filter + "&cari=" + cari
       }
+      url += "&rad=" + MkeKm(radius_lingkaran);
       var self = this
       axios.get(url)
         .then(function(res){
@@ -483,84 +549,104 @@ require_once("config/database.php");
       this.searchMarkerByCircle(posisi.getLatLng(), el("filter", "name").value, el("cari", "name").value);
     };
     my_event_map.prototype.initUserLocation = function(){
-      map.locate({setView: true, watch: true, maxZoom: 14});
+      map.locate({setView: false, watch: true, maxZoom: 15});
       //Event ketika lokasi ditemukan
       map.on('locationfound', (function(e) {
-        hitungan++;
-        el("button_search").style.display = "block";
-        this.searchMarkerByCircle(e.latlng);
-        posisi.setLatLng(e.latlng).addTo(map); //set marker
-        lingkaran.setLatLng(e.latlng).setRadius(radius_lingkaran).addTo(map) //set lingkaran
-        
-        // Event pas marker posisi user digeser
-        posisi.on("dragstart", (function(e){
-          if(el("leaflet-pm-toolbar leaflet-bar leaflet-control", "class").length == 1){
-            el("leaflet-pm-toolbar leaflet-bar leaflet-control", "class")[0].style.display = "none";
-          }
-          map.stopLocate()
-        }).bind(this))
-        
-        // Event pas marker posisi bergeser
-        posisi.on("move",(function(e){
-          lingkaran.setLatLng(e.latlng).setRadius(radius_lingkaran) //buat lingkaran setiap bergeser
-        }).bind(this))
-        
-        //Event saat proses bergeser berakhir
-        posisi.on("dragend", (function(e){
-          map.removeLayer(layer_marker);
-          this.searchMarkerByCircle(e.target._latlng)
-        }).bind(this))
-        
-        if(auth.getUserInfo()){
-          //add map controlls
-          map.pm.addControls({
-              position: 'topleft', // toolbar position, options are 'topleft', 'topright', 'bottomleft', 'bottomright'
-              drawMarker: true, // adds button to draw markers
-              drawPolyline: false, // adds button to draw a polyline
-              drawRectangle: false, // adds button to draw a rectangle
-              drawPolygon: false, // adds button to draw a polygon
-              drawCircle: false, // adds button to draw a cricle
-              cutPolygon: false, // adds button to cut a hole in a polygon
-              editMode: false, // adds button to toggle edit mode for all layers
-              removalMode: false, // adds a button to remove layers
-          });
-        
-          //event ketika marker baru ditambah
-          map.on('pm:create', (function(e){
-              el("modal_tambah_marker", "name").action = "tambah.php";
-              el("caption_marker").innerHTML = "Tambah Tempat Baru";
-              if(Jarak(e.layer._latlng, posisi.getLatLng()) >= 1){
-                alert("Marker hanya bisa ditempatkan radius maksimal 1Km dari tempat Anda!");
-                e.layer.remove();
-                this.refreshMap();
-              }else{
-                //layer dimasukkan ke variabel agar bisa dihapus
-                currentLayerJSON = e;
-                el("koordinat_lat").value = e.layer._latlng.lat;
-                el("koordinat_lng").value = e.layer._latlng.lng;
-                el("tambah").style.display = 'block';
-              }
-            }).bind(this));
-            
+        map.setMinZoom(13)
+        if(auth.getUserInfo){
           if(el("leaflet-pm-toolbar leaflet-bar leaflet-control", "class").length == 1){
             el("leaflet-pm-toolbar leaflet-bar leaflet-control", "class")[0].style.display = "block";
           }
         }
-        }).bind(this));
+        if(hitungan <= 1){
+          map.setView(e.latlng);
+        }
+        hitungan++;
+        
+        el("button_search").style.display = "block";
+        this.searchMarkerByCircle(e.latlng);
+        posisi.setLatLng(e.latlng).addTo(map); //set marker
+        pinggiran_lingkaran.setLatLng(latLngFromPointWithDistance(e.latlng.lat, e.latlng.lng, MkeKm(radius_lingkaran), 90)).addTo(map); //set marker penggeser lingkaran
+        lingkaran.setLatLng(e.latlng).setRadius(radius_lingkaran).addTo(map) //set lingkaran
+        
+        // Event pas marker posisi user digeser
+        posisi.on("dragstart", (event_map_item.posisi.onDragStart).bind(this))
+        
+        // Event pas marker posisi bergeser
+        posisi.on("move", (event_map_item.posisi.onMove).bind(this))
+        
+        //Event saat proses bergeser berakhir
+        posisi.on("dragend", (event_map_item.posisi.onDragEnd).bind(this))
+        
+        //Event saat pinggiran lingkaran mulai bergeser
+        pinggiran_lingkaran.on("dragstart",(event_map_item.pinggiran_lingkaran.onDragStart).bind(this))
+        
+        //Event saat pinggiran lingkaran bergeser
+        pinggiran_lingkaran.on("move",(event_map_item.pinggiran_lingkaran.onMove).bind(this))
+        
+        //Event saat pinggiran lingkaran berhenti bergeser
+        pinggiran_lingkaran.on("dragend",(event_map_item.pinggiran_lingkaran.onDragEnd).bind(this))
+        
+      }).bind(this));
         
         //Event ketika lokasi tidak ditemukan
         map.on('locationerror', function(){
-          if(el("leaflet-pm-toolbar leaflet-bar leaflet-control", "class").length == 1){
-            el("leaflet-pm-toolbar leaflet-bar leaflet-control", "class")[0].style.display = "none";
+          if(auth.getUserInfo){
+            if(el("leaflet-pm-toolbar leaflet-bar leaflet-control", "class").length == 1){
+              el("leaflet-pm-toolbar leaflet-bar leaflet-control", "class")[0].style.display = "none";
+            }
           }
           el("button_search").style.display = "none";
           //~ alert("Lokasi tidak ditemukan. Silahkan refresh halaman ini.");
         });   
     };
-      
+    
+    // Event item pada peta
+    const my_event_map_item = function(){}
+    my_event_map_item.prototype.posisi = function(){} 
+    my_event_map_item.prototype.pinggiran_lingkaran = function(){} 
+    my_event_map_item.prototype.posisi.onDragStart = function(e){
+      if(el("leaflet-pm-toolbar leaflet-bar leaflet-control", "class").length == 1){
+        el("leaflet-pm-toolbar leaflet-bar leaflet-control", "class")[0].style.display = "none";
+      }
+      pinggiran_lingkaran.off("move")
+      map.stopLocate()
+    }
+    my_event_map_item.prototype.posisi.onMove = function(e){
+      lingkaran.setLatLng(e.latlng) //buat lingkaran setiap bergeser
+      pinggiran_lingkaran.setLatLng(latLngFromPointWithDistance(e.latlng.lat, e.latlng.lng, MkeKm(radius_lingkaran), 90))
+    }
+    my_event_map_item.prototype.posisi.onDragEnd = function(e){
+      pinggiran_lingkaran.on("move",my_event_map_item.prototype.pinggiran_lingkaran.onMove)
+      if(layer_marker){
+        map.removeLayer(layer_marker)
+      }
+      this.searchMarkerByCircle(e.target._latlng)
+    }
+    my_event_map_item.prototype.pinggiran_lingkaran.onDragStart = function(e){
+      if(el("leaflet-pm-toolbar leaflet-bar leaflet-control", "class").length == 1){
+        el("leaflet-pm-toolbar leaflet-bar leaflet-control", "class")[0].style.display = "none";
+      }
+      map.stopLocate()
+    }
+    my_event_map_item.prototype.pinggiran_lingkaran.onMove = function(e){
+      radius_lingkaran = L.latLng(posisi.getLatLng()).distanceTo(e.latlng);
+      lingkaran.setRadius(radius_lingkaran)
+    }
+    my_event_map_item.prototype.pinggiran_lingkaran.onDragEnd = function(e){
+      if(layer_marker){
+        map.removeLayer(layer_marker)
+      }
+      map.stopLocate()
+      this.searchMarkerByCircle(e.target._latlng)
+    }
+    
     // Method login dan registrasi
     const auth = {
       cekAuth(){
+        if(el("leaflet-pm-toolbar leaflet-bar leaflet-control", "class").length == 1){
+          el("leaflet-pm-toolbar leaflet-bar leaflet-control", "class")[0].style.display = "none";
+        }
         axios.get("cek-login.php")
           .then(function(res){
             if(res.data.status == true){
@@ -635,38 +721,7 @@ require_once("config/database.php");
       }
     }
     
-    // el(x string)
-    // Method untuk mengambil instance DOM secara singkat
-    function el(x, tipe="id"){
-      switch(tipe){
-        case "id":
-          return document.getElementById(x);
-          break;
-        case "class":
-          return document.getElementsByClassName(x);
-          break;
-        case "name":
-          return document.getElementsByName(x)[0];
-          break;
-        default:
-          return null;
-      }
-    }
-    function elForm(x, y){
-      return document[x][y];
-    }
     
-    // MkeKm(m int)
-    // Method untuk konversi meter ke kilometer
-    function MkeKm(m){
-      return (m/1000)
-    }
-    
-    // Jarak(arr1 array atau Object{lat,lng}, arr2 array atau Object{lat,lng})
-    // Mengetahui jarak dari satu titik ke titik lain (Km)
-    function Jarak(arr1, arr2){
-      return MkeKm(L.latLng(arr1).distanceTo(L.latLng(arr2)))
-    }
     //EOF Fungsi Javascript
     
     
@@ -681,10 +736,15 @@ require_once("config/database.php");
     el("button_logout").addEventListener("click", function(){ auth.logout(); });
     el("button_sign_in").addEventListener("click", function(){ event.toggleLoginModal(); });
     el("button_sign_up").addEventListener("click", function(){ event.toggleRegistrasiModal(); });
-    el("button_gps").addEventListener("click", function(){ map.locate({setView: true, watch: true, maxZoom: 14}); });
+    el("button_gps").addEventListener("click", function(){ 
+      radius_lingkaran = 1000;
+      hitungan = 0;
+      map.locate({setView: false, watch: true, maxZoom: 15});
+    });
     el("button_batal_marker").addEventListener("click", function(){
-       el('modal_tambah').style.display='none';
-       event_map.refreshMap();
+      el('modal_tambah_marker').style.display='none';
+      event_map.refreshMap()
+      map.pm.disableDraw();
     });
     el("button_edit_marker").addEventListener("click", function(){
       event_map.toggleEditMarker(current_marker)
@@ -699,8 +759,38 @@ require_once("config/database.php");
     
     var event = new my_event();
     var event_map = new my_event_map(1000);
+    var event_map_item = new my_event_map_item();
     
-    auth.cekAuth();    
+    map.pm.addControls({
+        position: 'topleft', // toolbar position, options are 'topleft', 'topright', 'bottomleft', 'bottomright'
+        drawMarker: true, // adds button to draw markers
+        drawPolyline: false, // adds button to draw a polyline
+        drawRectangle: false, // adds button to draw a rectangle
+        drawPolygon: false, // adds button to draw a polygon
+        drawCircle: false, // adds button to draw a cricle
+        cutPolygon: false, // adds button to cut a hole in a polygon
+        editMode: false, // adds button to toggle edit mode for all layers
+        removalMode: false, // adds a button to remove layers
+    });
+  
+    //event ketika marker baru ditambah
+    map.on('pm:create', (function(e){
+        if(Jarak(e.layer._latlng, posisi.getLatLng()) >= 1){
+          alert("Marker hanya bisa ditempatkan radius maksimal 1Km dari tempat Anda!");
+          e.layer.remove();
+          event_map.refreshMap();
+        }else{
+          el("form_tambah_marker", "name").action = "tambah.php";
+          el("caption_marker").innerHTML = "Tambah Tempat Baru";
+          //layer dimasukkan ke variabel agar bisa dihapus
+          currentLayerJSON = e;
+          el("koordinat_lat").value = e.layer._latlng.lat;
+          el("koordinat_lng").value = e.layer._latlng.lng;
+          el("modal_tambah_marker").style.display = 'block';
+        }
+      }).bind(this));
+    
+    auth.cekAuth();
 	</script>
  </body>
 </html>
