@@ -3,12 +3,12 @@ session_start();
 if(isset($_GET['lat']) && isset($_GET['lng'])){
   // Radius lingkaran 1 km
   $radius_lingkaran = 1;
-  if(isset($_GET['rad'])) $radius_lingkaran = $_GET['rad'];
+  if(isset($_GET['rad'])) $radius_lingkaran = round($_GET['rad'],1);
   $id_user = "";
   if(isset($_SESSION['id_user'])) $id_user = " AND a.id_user = ".$_SESSION['id_user'];
   require_once("config/database.php");
-  $latitude = $db->quote($_GET['lat']);
-  $longitude = $db->quote($_GET['lng']);
+  $latitude = $db->quote(round($_GET['lat'], 6));
+  $longitude = $db->quote(round($_GET['lng'], 6));
   $cari = "";
     if(isset($_GET['filter']) && isset($_GET['cari'])){
       switch($_GET['filter']){
