@@ -319,6 +319,12 @@ require_once("config/database.php");
     var lingkaran = L.circle(null, {color: "#FF00B5", fill: "#000000", fillOpacity: 0.3});
     var filter = null
     var cari = null
+    var pinggiran_lingkaran = L.marker([null, null], {icon: L.icon({
+          iconSize: [40, 40],
+          iconAnchor: [13, 27],
+          popupAnchor:  [1, -24],
+          iconUrl: 'dist/css/images/icon-arrow.png'
+      }), draggable: true});
     // EOF variabel
     
     // Fungsi javascript
@@ -354,13 +360,37 @@ require_once("config/database.php");
     // MkeKm(m int)
     // Method untuk konversi meter ke kilometer
     function MkeKm(m){
-      return (m/1000)
+      return (m/1000).toFixed(6)
     }
     
     // Jarak(arr1 array atau Object{lat,lng}, arr2 array atau Object{lat,lng})
     // Mengetahui jarak dari satu titik ke titik lain (Km)
     function Jarak(arr1, arr2){
       return MkeKm(L.latLng(arr1).distanceTo(L.latLng(arr2)))
+    }
+    
+    function latLngFromPointWithDistance(lat1,long1,d,angle){
+      // Earth Radious in KM
+      var R = 6378.14;
+  
+      // Degree to Radian
+      var latitude1 = lat1 * (Math.PI/180);
+      var longitude1 = long1 * (Math.PI/180);
+      var brng = angle * (Math.PI/180);
+  
+      var latitude2 = Math.asin(Math.sin(latitude1)*Math.cos(d/R) + Math.cos(latitude1)*Math.sin(d/R)*Math.cos(brng));
+      var longitude2 = longitude1 + Math.atan2(Math.sin(brng)*Math.sin(d/R)*Math.cos(latitude1),Math.cos(d/R)-Math.sin(latitude1)*Math.sin(latitude2));
+  
+      // back to degrees
+      latitude2 = latitude2 * (180/Math.PI);
+      longitude2 = longitude2 * (180/Math.PI);
+  
+      //6 decimal for Leaflet and other system compatibility
+      lat2 = latitude2.toFixed(6);
+      long2 = longitude2.toFixed(6);
+    
+      // Push in array and get back
+      return [lat2, long2];
     }
     
     // showEditMarker(d Object)
@@ -455,7 +485,7 @@ require_once("config/database.php");
     function searchMarkerByCircle(x = {lat: null, lng: null}, param_filter = null, param_cari = null){
       if(param_filter) filter = param_filter;
       if(param_cari) filter = param_cari;
-      var url = "get-marker.php?lat=" + x.lat + "&lng=" + x.lng;
+      var url = "get-marker.php?lat=" + x.lat + "&lng=" + x.lng +"&rad=" + radius_lingkaran;
         if(filter && cari){
           el("button_filter").innerHTML = "Mencari Data..."
           el("button_filter").disabled = true
