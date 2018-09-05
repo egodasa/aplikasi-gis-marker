@@ -84,11 +84,11 @@ require_once("config/database.php");
           <form name="form_login" onsubmit="return false">
           <p>
           <label>Username</label>
-          <input class="w3-input w3-border w3-small" type="text" name="username" required>
+          <input class="w3-input w3-border w3-small" type="text" name="username" minlength="1" maxlength="20" required>
           </p>
           <p>
           <label>Password</label>
-          <input class="w3-input w3-border w3-small" type="password" name="password" required>
+          <input class="w3-input w3-border w3-small" type="password" name="password" minlength="1" maxlength="20" required>
           </p>
         </div>
         <div class="w3-container">
@@ -113,15 +113,15 @@ require_once("config/database.php");
           <form name="form_registrasi" onsubmit="return false">
           <p>
           <label>Username</label>
-          <input class="w3-input w3-border w3-small" type="text" name="username" required >
+          <input class="w3-input w3-border w3-small" type="text" name="username" minlength="1" maxlength="20" required >
           </p>
           <p>
           <label>Password</label>
-          <input class="w3-input w3-border w3-small" type="password" name="password" required >
+          <input class="w3-input w3-border w3-small" type="password" name="password" minlength="5" maxlength="20" required >
           </p>
           <p>
           <label>Email</label>
-          <input class="w3-input w3-border w3-small" type="email" name="email" required >
+          <input class="w3-input w3-border w3-small" type="email" name="email"  minlength="5" maxlength="50" required >
           </p>
         </div>
         <div class="w3-container">
@@ -149,7 +149,7 @@ require_once("config/database.php");
             <input type="hidden" id="koordinat_lat" name="koordinat_lat">
             <input type="hidden" id="koordinat_lng" name="koordinat_lng">
             <p>
-            <label>Judul</label> <input class="w3-input w3-border w3-small" type="text" id="judul" name="judul" required></p>
+            <label>Judul</label> <input class="w3-input w3-border w3-small" type="text" id="judul" name="judul"  minlength="1" maxlength="100" required></p>
             <p><label>Kategori</label>
             <select class="w3-select w3-border w3-small" name="kategori" id="kategori">
             <option value="Jual Tanah">Jual Tanah</option>
@@ -166,7 +166,7 @@ require_once("config/database.php");
             <option value="Event Pameran">Event Pameran</option>
             </select>
             </p>
-            <p><label>Deskripsi</label> <textarea class="w3-input w3-border w3-small" id="deskripsi" name="deskripsi"></textarea></p>
+            <p><label>Deskripsi</label> <textarea class="w3-input w3-border w3-small" id="deskripsi" name="deskripsi" minlength="3" maxlength="255"></textarea></p>
             <p id="input_gambar"><label>Gambar (Maks. 5 Gambar)</label> <input class="w3-input w3-border w3-small" type="file" accept="image/jpeg, images/jpg" id="gambar" name="gambar[]" multiple></p>
         </div>
         <div class="w3-container">
@@ -246,7 +246,7 @@ require_once("config/database.php");
             <option value="kategori">Kategori</option>
           </select>
           </p>
-          <p><label>Kata Kunci</label> <input class="w3-input w3-border w3-small" type="text" name="cari" /></p>
+          <p><label>Kata Kunci</label> <input class="w3-input w3-border w3-small" type="text" name="cari" maxlength="50" /></p>
       </div>
       <div class="w3-container">
         <p>
