@@ -15,10 +15,12 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 		$hasil['status'] = true;
 		$hasil['data'] = array(
         'username'  => $login['username'],
-        'id_user'  => $login['id_user']
+        'id_user'  => $login['id_user'],
+        'tipe_user'  => $login['tipe_user']
     );
     $_SESSION['username'] = $login['username'];
     $_SESSION['id_user'] = $login['id_user'];
+    $_SESSION['tipe_user'] = $login['tipe_user'];
 	}
   echo json_encode($hasil);
 }

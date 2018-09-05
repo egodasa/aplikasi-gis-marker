@@ -1,5 +1,7 @@
 <?php
 session_start();
+require_once("auth.php");
+checkAuth();
 
 if($_SERVER['REQUEST_METHOD'] == 'POST'){
   require "config/database.php";

@@ -1,8 +1,9 @@
 <?php
 session_start();
+require_once("auth.php");
+checkAuth();
 
 if($_SERVER['REQUEST_METHOD'] == 'POST'){
-  
   $banyak_gambar = count($_FILES['gambar']['name']) - 1;
   
   if($banyak_gambar > 4){

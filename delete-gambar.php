@@ -1,5 +1,7 @@
 <?php
 session_start();
+require_once("auth.php");
+checkAuth();
 if(isset($_GET['id_gambar'])){
   require "config/database.php";
   $id = $_GET['id_gambar'];

@@ -208,7 +208,7 @@ require_once("config/database.php");
           <input type="hidden" id="id_tempat_marker" name="id_tempat_marker" >
           <input type="hidden" id="id_user_marker" name="id_user">
           <input type="hidden" id="koordinat_marker" name="koordinat_marker" >
-      </form>
+        </form>
           <label><b>Judul</b></label>
           <p id="judul_marker"></p>
           <label><b>Kategori</b></label>
@@ -348,6 +348,9 @@ require_once("config/database.php");
       el("informasi_user").style.display = "none";
       el("informasi_user").innerHTML = "";
       el("button_logout").style.display = "none";
+      if(el("leaflet-pm-toolbar leaflet-bar leaflet-control", "class").length == 1){
+        el("leaflet-pm-toolbar leaflet-bar leaflet-control", "class")[0].style.display = "none";
+      }
       
       el("button_sign_in").style.display = "block";
       el("button_sign_up").style.display = "block";
@@ -399,7 +402,7 @@ require_once("config/database.php");
       daftar_marker = []
       marker_geojson = []
       layer_marker = null
-      posisi = L.marker([null, null], {icon: L.icon({
+      posisi = L.marker([-0.502106, 117.153709], {icon: L.icon({
           iconSize: [40, 40],
           iconAnchor: [13, 27],
           popupAnchor:  [1, -24],
@@ -552,41 +555,44 @@ require_once("config/database.php");
       map.locate({setView: false, watch: true, maxZoom: 15});
       //Event ketika lokasi ditemukan
       map.on('locationfound', (function(e) {
-        map.setMinZoom(13)
-        if(auth.getUserInfo){
-          if(el("leaflet-pm-toolbar leaflet-bar leaflet-control", "class").length == 1){
-            el("leaflet-pm-toolbar leaflet-bar leaflet-control", "class")[0].style.display = "block";
+        if(posisi.getLatLng()){
+          // kalau posisi tidak berubah, jangan update icon posisi user
+          if(posisi.getLatLng().lat != e.latlng.lat && posisi.getLatLng().lng != e.latlng.lng){
+            map.setZoom(14);
+            if(auth.getUserInfo()){
+              if(el("leaflet-pm-toolbar leaflet-bar leaflet-control", "class").length == 1){
+                el("leaflet-pm-toolbar leaflet-bar leaflet-control", "class")[0].style.display = "block";
+              }
+            }
+            if(L.latLng(posisi.getLatLng()).distanceTo(e.latlng) > 10){
+              map.setView(e.latlng);
+            }
+            
+            el("button_search").style.display = "block";
+            this.searchMarkerByCircle(e.latlng);
+            posisi.setLatLng(e.latlng).addTo(map); //set marker
+            pinggiran_lingkaran.setLatLng(latLngFromPointWithDistance(e.latlng.lat, e.latlng.lng, MkeKm(radius_lingkaran), 90)).addTo(map); //set marker penggeser lingkaran
+            lingkaran.setLatLng(e.latlng).setRadius(radius_lingkaran).addTo(map) //set lingkaran
+            
+            // Event pas marker posisi user digeser
+            posisi.on("dragstart", (event_map_item.posisi.onDragStart).bind(this))
+            
+            // Event pas marker posisi bergeser
+            posisi.on("move", (event_map_item.posisi.onMove).bind(this))
+            
+            //Event saat proses bergeser berakhir
+            posisi.on("dragend", (event_map_item.posisi.onDragEnd).bind(this))
+            
+            //Event saat pinggiran lingkaran mulai bergeser
+            pinggiran_lingkaran.on("dragstart",(event_map_item.pinggiran_lingkaran.onDragStart).bind(this))
+            
+            //Event saat pinggiran lingkaran bergeser
+            pinggiran_lingkaran.on("move",(event_map_item.pinggiran_lingkaran.onMove).bind(this))
+            
+            //Event saat pinggiran lingkaran berhenti bergeser
+            pinggiran_lingkaran.on("dragend",(event_map_item.pinggiran_lingkaran.onDragEnd).bind(this)) 
           }
         }
-        if(hitungan <= 1){
-          map.setView(e.latlng);
-        }
-        hitungan++;
-        
-        el("button_search").style.display = "block";
-        this.searchMarkerByCircle(e.latlng);
-        posisi.setLatLng(e.latlng).addTo(map); //set marker
-        pinggiran_lingkaran.setLatLng(latLngFromPointWithDistance(e.latlng.lat, e.latlng.lng, MkeKm(radius_lingkaran), 90)).addTo(map); //set marker penggeser lingkaran
-        lingkaran.setLatLng(e.latlng).setRadius(radius_lingkaran).addTo(map) //set lingkaran
-        
-        // Event pas marker posisi user digeser
-        posisi.on("dragstart", (event_map_item.posisi.onDragStart).bind(this))
-        
-        // Event pas marker posisi bergeser
-        posisi.on("move", (event_map_item.posisi.onMove).bind(this))
-        
-        //Event saat proses bergeser berakhir
-        posisi.on("dragend", (event_map_item.posisi.onDragEnd).bind(this))
-        
-        //Event saat pinggiran lingkaran mulai bergeser
-        pinggiran_lingkaran.on("dragstart",(event_map_item.pinggiran_lingkaran.onDragStart).bind(this))
-        
-        //Event saat pinggiran lingkaran bergeser
-        pinggiran_lingkaran.on("move",(event_map_item.pinggiran_lingkaran.onMove).bind(this))
-        
-        //Event saat pinggiran lingkaran berhenti bergeser
-        pinggiran_lingkaran.on("dragend",(event_map_item.pinggiran_lingkaran.onDragEnd).bind(this))
-        
       }).bind(this));
         
         //Event ketika lokasi tidak ditemukan
@@ -655,6 +661,7 @@ require_once("config/database.php");
               localStorage.set("informasi_user", res.data.data);
               event.pageUser();
             }else{
+              localStorage.clearAll();
               event.pageVisitor();
             }
             event_map.initUserLocation();
@@ -777,7 +784,8 @@ require_once("config/database.php");
   
     //event ketika marker baru ditambah
     map.on('pm:create', (function(e){
-        if(Jarak(e.layer._latlng, posisi.getLatLng()) >= 1){
+        // Diserver juga saya cek hak aksesnya. jadi gk bisa manipulasi ya...
+        if(Jarak(e.layer._latlng, posisi.getLatLng()) >= 1 && auth.getUserInfo().tipe_user != "Admin"){
           alert("Marker hanya bisa ditempatkan radius maksimal 1Km dari tempat Anda!");
           e.layer.remove();
           event_map.refreshMap();
