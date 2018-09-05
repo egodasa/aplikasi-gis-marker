@@ -84,7 +84,7 @@ require_once("config/database.php");
           <form name="form_login" onsubmit="return false">
           <p>
           <label>Username</label>
-          <input class="w3-input w3-border w3-small" type="text" name="username" minlength="1" maxlength="20" required>
+          <input class="w3-input w3-border w3-small" type="text" name="username" minlength="1" maxlength="50" required>
           </p>
           <p>
           <label>Password</label>
@@ -260,8 +260,6 @@ require_once("config/database.php");
 
 	<script>
     var hitungan = 0;
-    // Fungsi javascript
-    // Method localstorage
     
     // el(x string)
     // Method untuk mengambil instance DOM secara singkat
@@ -319,6 +317,16 @@ require_once("config/database.php");
       // Push in array and get back
       return [lat2, long2];
     }
+    
+    function getCurrentLocation(){
+      navigator.geolocation.getCurrentPosition(function(position){
+        posisi = [position.coords.latitude, position.coords.longitude]
+        console.log(posisi)
+      })
+    }
+    
+    //~ var pos = setInterval(getCurrentLocation, 1000);
+    
     const localStorage = {
       set(x,y){
           store.set(x,y)
@@ -348,9 +356,8 @@ require_once("config/database.php");
       el("informasi_user").style.display = "none";
       el("informasi_user").innerHTML = "";
       el("button_logout").style.display = "none";
-      if(el("leaflet-pm-toolbar leaflet-bar leaflet-control", "class").length == 1){
-        el("leaflet-pm-toolbar leaflet-bar leaflet-control", "class")[0].style.display = "none";
-      }
+      
+      this.toggleMarkerEditor("disable");
       
       el("button_sign_in").style.display = "block";
       el("button_sign_up").style.display = "block";
@@ -394,6 +401,25 @@ require_once("config/database.php");
       }
       this.resetFilterModal();
     };
+    
+    my_event.prototype.toggleMarkerEditor = function(x = "enable"){
+      if(el("leaflet-pm-toolbar leaflet-bar leaflet-control", "class").length == 1){
+        var status = el("leaflet-pm-toolbar leaflet-bar leaflet-control", "class")[0].style.display;
+        switch(x){
+          case "enable": 
+            el("leaflet-pm-toolbar leaflet-bar leaflet-control", "class")[0].style.display = "block";
+          break;
+          case "disable": 
+            el("leaflet-pm-toolbar leaflet-bar leaflet-control", "class")[0].style.display = "none";
+          break;
+        }
+      }
+      if(auth.getUserInfo()){
+        if(auth.getUserInfo().tipe_user == "Admin"){
+          el("leaflet-pm-toolbar leaflet-bar leaflet-control", "class")[0].style.display = "block";
+        }
+      }
+    }
     
     var my_event_map = function(radius){
       radius_lingkaran = radius; //1000 meter = 1 km
@@ -555,15 +581,13 @@ require_once("config/database.php");
       map.locate({setView: false, watch: true, maxZoom: 15});
       //Event ketika lokasi ditemukan
       map.on('locationfound', (function(e) {
+        if(auth.getUserInfo()){
+          event.toggleMarkerEditor("enable");
+        }
         if(posisi.getLatLng()){
           // kalau posisi tidak berubah, jangan update icon posisi user
           if(posisi.getLatLng().lat != e.latlng.lat && posisi.getLatLng().lng != e.latlng.lng){
             map.setZoom(14);
-            if(auth.getUserInfo()){
-              if(el("leaflet-pm-toolbar leaflet-bar leaflet-control", "class").length == 1){
-                el("leaflet-pm-toolbar leaflet-bar leaflet-control", "class")[0].style.display = "block";
-              }
-            }
             if(L.latLng(posisi.getLatLng()).distanceTo(e.latlng) > 10){
               map.setView(e.latlng);
             }
@@ -597,10 +621,8 @@ require_once("config/database.php");
         
         //Event ketika lokasi tidak ditemukan
         map.on('locationerror', function(){
-          if(auth.getUserInfo){
-            if(el("leaflet-pm-toolbar leaflet-bar leaflet-control", "class").length == 1){
-              el("leaflet-pm-toolbar leaflet-bar leaflet-control", "class")[0].style.display = "none";
-            }
+          if(auth.getUserInfo()){
+            event.toggleMarkerEditor("disable");
           }
           el("button_search").style.display = "none";
           //~ alert("Lokasi tidak ditemukan. Silahkan refresh halaman ini.");
@@ -612,9 +634,7 @@ require_once("config/database.php");
     my_event_map_item.prototype.posisi = function(){} 
     my_event_map_item.prototype.pinggiran_lingkaran = function(){} 
     my_event_map_item.prototype.posisi.onDragStart = function(e){
-      if(el("leaflet-pm-toolbar leaflet-bar leaflet-control", "class").length == 1){
-        el("leaflet-pm-toolbar leaflet-bar leaflet-control", "class")[0].style.display = "none";
-      }
+      event.toggleMarkerEditor("disable");
       pinggiran_lingkaran.off("move")
       map.stopLocate()
     }
@@ -630,9 +650,7 @@ require_once("config/database.php");
       this.searchMarkerByCircle(e.target._latlng)
     }
     my_event_map_item.prototype.pinggiran_lingkaran.onDragStart = function(e){
-      if(el("leaflet-pm-toolbar leaflet-bar leaflet-control", "class").length == 1){
-        el("leaflet-pm-toolbar leaflet-bar leaflet-control", "class")[0].style.display = "none";
-      }
+      event.toggleMarkerEditor("disable");
       map.stopLocate()
     }
     my_event_map_item.prototype.pinggiran_lingkaran.onMove = function(e){
@@ -652,9 +670,7 @@ require_once("config/database.php");
     // Method login dan registrasi
     const auth = {
       cekAuth(){
-        if(el("leaflet-pm-toolbar leaflet-bar leaflet-control", "class").length == 1){
-          el("leaflet-pm-toolbar leaflet-bar leaflet-control", "class")[0].style.display = "none";
-        }
+        event.toggleMarkerEditor("disable");
         axios.get("cek-login.php")
           .then(function(res){
             if(res.data.status == true){
