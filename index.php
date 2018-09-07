@@ -41,24 +41,6 @@ require_once("config/database.php");
   
   <!-- Menu -->
   <!-- Tombol kanan atas  -->
-<!--
-  <div class="leaflet-control-container">
-    <div id="kontrol_kanan_atas" class="leaflet-top leaflet-right" style="z-index: 2;">
-      <div class="leaflet-control-layers leaflet-control-layers-expanded leaflet-control">
-        <div class="w3-dropdown-click">
-          <button onclick="toggleMenu()" class="w3-button w3-hover-white">&#9776; Menu</button>
-          <div id="menu" class="w3-dropdown-content w3-border">
-            <a href="#" id="button_search" style="display: none;" class="w3-green">Search</a>
-            <a href="#" id="informasi_user" style="display: none;"></a>
-            <a href="#" id="button_logout" style="display: none;">Logout</a>
-            <a href="#" id="button_sign_in">Sign In</a>
-            <a href="#" id="button_sign_up">Sign Up</a> 
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
--->
   <div class="leaflet-control-container">
     <div id="kontrol_kanan_atas" class="leaflet-top leaflet-right" style="z-index: 2;">
       <div class="leaflet-control-layers leaflet-control-layers-expanded leaflet-control w3-white">
@@ -278,6 +260,9 @@ require_once("config/database.php");
     </div>
   </div>
 
-	<script src="dist/js/main.js"></script>
+	<script src="dist/js/program/helper.js"></script>
+	<script src="dist/js/program/auth.js"></script>
+	<script src="dist/js/program/event.js"></script>
+	<script src="dist/js/program/main.js"></script>
  </body>
 </html>
