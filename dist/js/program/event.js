@@ -302,7 +302,6 @@ my_event_map_item.prototype.posisi.onMove = function(e){
   pinggiran_lingkaran.setLatLng(latLngFromPointWithDistance(e.latlng.lat, e.latlng.lng, MkeKm(radius_lingkaran), 90))
 }
 my_event_map_item.prototype.posisi.onDragEnd = function(e){
-
   pinggiran_lingkaran.on("move",my_event_map_item.prototype.pinggiran_lingkaran.onMove)
   if(layer_marker){
     map.removeLayer(layer_marker)
