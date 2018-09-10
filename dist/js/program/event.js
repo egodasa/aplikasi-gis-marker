@@ -381,7 +381,7 @@ el("gambar").addEventListener("change", function(){
         alert("Masing-masing gambar maksimal 300kb");
         break;
       }else{
-        el("button_simpan_marker").disabled = true;
+        el("button_simpan_marker").disabled = false;
       }
     }
   }
