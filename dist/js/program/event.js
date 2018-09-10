@@ -143,8 +143,6 @@ my_event_map.prototype.getDetailMarker = function(d){
   for(var x = 0; x < banyak_gambar; x++){
     gambar.push("<div class='w3-third'><div class='w3-card-2'><a href='gambar/" + d.gambar[x].nm_gambar + "'><img src='gambar/" + d.gambar[x].nm_gambar + "' class='w3-image w3-padding' style='height:250px;' /></a>");
     if(auth.getUserInfo()){
-      el("button_delete_marker").style.display = "inline-block";
-      el("button_edit_marker").style.display = "inline-block";
       gambar.push("<p class='w3-center w3-padding'>");
       gambar.push("<form id='" + d.gambar[x].id_gambar + "' action='update-gambar.php' method='POST' enctype='multipart/form-data'>");
       gambar.push("<input type='hidden' value='" + d.gambar[x].nm_gambar +"' name='nm_gambar' />");
@@ -155,11 +153,15 @@ my_event_map.prototype.getDetailMarker = function(d){
       gambar.push("<div class='w3-clear'></div><br/>");
       gambar.push("</form>");
       gambar.push("</p>");
-    }else{
-      el("button_delete_marker").style.display = "none";
-      el("button_edit_marker").style.display = "none";
     }
     gambar.push("</div></div>");
+  }
+  if(auth.getUserInfo()){
+    el("button_delete_marker").style.display = "inline-block";
+    el("button_edit_marker").style.display = "inline-block";
+  }else{
+    el("button_delete_marker").style.display = "none";
+    el("button_edit_marker").style.display = "none";
   }
   gambar.push('</div>');
   el("gambar_marker").innerHTML = gambar.join("");
