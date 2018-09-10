@@ -36,7 +36,7 @@ if(isset($_GET['lat']) && isset($_GET['lng'])){
   $hasil = $db->sql($sql)->many();
   $banyak = count($hasil);
   for($x = 0; $x < $banyak; $x++){
-    $hasil[$x]['gambar'] = $db->from('tbl_gambar_tempat')->where('id_tempat', $hasil[$x]['id_tempat'])->select("id_gambar, nm_gambar")->many();;
+    $hasil[$x]['gambar'] = $db->from('tbl_gambar_tempat')->where('id_tempat', $hasil[$x]['id_tempat'])->select("id_gambar, nm_gambar")->many();
   }
   echo json_encode($hasil);
 }else{
