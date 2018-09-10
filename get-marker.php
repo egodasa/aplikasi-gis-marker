@@ -34,7 +34,6 @@ if(isset($_GET['lat']) && isset($_GET['lng'])){
     }
   $sql = "SELECT a.*,b.username, (((acos(sin((".$latitude."*pi()/180))*sin((a.koordinat_lat*pi()/180))+cos((".$latitude."*pi()/180))*cos((a.koordinat_lat*pi()/180)) * cos(((".$longitude."- a.koordinat_lng)*pi()/180))))*180/pi())*60*1.1515*1.609344) as jarak from tbl_tempat a join tbl_user b on a.id_user = b.id_user WHERE (((acos(sin((".$latitude."*pi()/180))*sin((a.koordinat_lat*pi()/180))+cos((".$latitude."*pi()/180))*cos((a.koordinat_lat*pi()/180)) * cos(((".$longitude."- a.koordinat_lng)*pi()/180))))*180/pi())*60*1.1515*1.609344) <= ".$radius_lingkaran.$id_user.$cari;
   $hasil = $db->sql($sql)->many();
-  $banyak = count($hasil);
   for($x = 0; $x < $banyak; $x++){
     $hasil[$x]['gambar'] = $db->from('tbl_gambar_tempat')->where('id_tempat', $hasil[$x]['id_tempat'])->select("id_gambar, nm_gambar")->many();
   }
