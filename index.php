@@ -12,12 +12,15 @@ require_once("config/database.php");
   <link rel="stylesheet" href="dist/css/w3.css" />
   <link rel="stylesheet" href="dist/css/leaflet.css" />
   <link rel="stylesheet" href="dist/css/leaflet.pm.css" />
+  <link rel="stylesheet" href="dist/css/MarkerCluster.css" />
+  <link rel="stylesheet" href="dist/css/MarkerCluster.Default.css" />
   
   <script src="dist/js/leaflet.js"></script>
   <script src="dist/js/leaflet.pm.min.js"></script>
   <script src="dist/js/turf.min.js"></script>
   <script src="dist/js/axios.min.js"></script>
   <script src="dist/js/store.min.js"></script>
+  <script src="dist/js/leaflet.markercluster.js"></script>
   
   <script src="https://cdn.polyfill.io/v2/polyfill.min.js?features=Promise"></script>
 	<style type="text/css">

@@ -83,6 +83,7 @@ var my_event_map = function(radius){
   currentLayerJSON = null
   daftar_marker = []
   marker_geojson = []
+  marker_cluster = L.markerClusterGroup()
   layer_marker = null
   posisi = L.marker([-0.502106, 117.153709], {icon: L.icon({
       iconSize: [40, 40],
@@ -104,11 +105,14 @@ var my_event_map = function(radius){
   hitungan = 0;
   
   map = L.map('map').setView([-0.502106, 117.153709], 5);
-  tile_layer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  tile_layer = L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoiZWdvZGFzYSIsImEiOiJjamd4NWkyMmwwNms2MnhsamJvaWQ3NGZmIn0.6ok1IiPZ0sPNXmiIe-iEWA', {
+  attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, ' +
+			          '<a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
+			          'Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+  id: 'mapbox.streets',
   minZoom: 5,
   maxZoom: 18,
-  noWrap: false,
-  attribution: 'Data by <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> | By Simon & Fritz'
+  noWrap: false
   }).addTo(map);
 };
 
@@ -176,7 +180,8 @@ my_event_map.prototype.refreshMap = function(){
 my_event_map.prototype.initLayerMarker = function(marker){
   marker_geojson = []
   if(layer_marker){
-    map.removeLayer(layer_marker)
+    map.removeLayer(layer_marker);
+    marker_cluster.clearLayers();
   }
   var banyak_marker = marker.length
 
@@ -201,7 +206,9 @@ my_event_map.prototype.initLayerMarker = function(marker){
                     iconUrl: 'dist/css/images/icon-region.png'
                 })}); // ubah icon 
     },
-  }).addTo(map);
+  });
+  marker_cluster.addLayer(layer_marker);
+  map.addLayer(marker_cluster);
 };
 my_event_map.prototype.searchMarkerByCircle = function(x = {lat: null, lng: null}, pfilter = null, pcari = null){
   var url = "get-marker.php?lat=" + x.lat + "&lng=" + x.lng;
