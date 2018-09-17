@@ -144,22 +144,27 @@ my_event_map.prototype.getDetailMarker = function(d){
   el("kategori_marker").innerHTML = d.kategori
   el("deskripsi_marker").innerHTML = d.deskripsi
   var gambar = ['<div class="w3-row-padding w3-margin-top">']
-  for(var x = 0; x < banyak_gambar; x++){
-    gambar.push("<div class='w3-third'><div class='w3-card-2'><a href='gambar/" + d.gambar[x].nm_gambar + "'><img src='gambar/" + d.gambar[x].nm_gambar + "' class='w3-image w3-padding' style='height:250px;' /></a>");
-    if(auth.getUserInfo()){
-      gambar.push("<p class='w3-center w3-padding'>");
-      gambar.push("<form id='" + d.gambar[x].id_gambar + "' action='update-gambar.php' method='POST' enctype='multipart/form-data'>");
-      gambar.push("<input type='hidden' value='" + d.gambar[x].nm_gambar +"' name='nm_gambar' />");
-      gambar.push("<p class='w3-padding'><label>Ganti Gambar</label><input class='w3-input w3-small w3-border' type='file' name='update_gambar' /></p>");
-      gambar.push("<p class='w3-padding'>");
-      gambar.push("<button type='submit' class='w3-button w3-blue w3-small w3-left'>Update</button>");
-      gambar.push("<a href='delete-gambar.php?id_gambar=" + d.gambar[x].id_gambar + "&nm_gambar="+ d.gambar[x].nm_gambar +"' class='w3-button w3-red w3-small w3-right'>Hapus Gambar</a></p>");
-      gambar.push("<div class='w3-clear'></div><br/>");
-      gambar.push("</form>");
-      gambar.push("</p>");
+  if(banyak_gambar > 0){
+    for(var x = 0; x < banyak_gambar; x++){
+      gambar.push("<div class='w3-third'><div class='w3-card-2'><a href='gambar/" + d.gambar[x].nm_gambar + "'><img src='gambar/" + d.gambar[x].nm_gambar + "' class='w3-image w3-padding' style='height:250px;' /></a>");
+      if(auth.getUserInfo()){
+        gambar.push("<p class='w3-center w3-padding'>");
+        gambar.push("<form id='" + d.gambar[x].id_gambar + "' action='update-gambar.php' method='POST' enctype='multipart/form-data'>");
+        gambar.push("<input type='hidden' value='" + d.gambar[x].nm_gambar +"' name='nm_gambar' />");
+        gambar.push("<p class='w3-padding'><label>Ganti Gambar</label><input class='w3-input w3-small w3-border' type='file' name='update_gambar' /></p>");
+        gambar.push("<p class='w3-padding'>");
+        gambar.push("<button type='submit' class='w3-button w3-blue w3-small w3-left'>Update</button>");
+        gambar.push("<a href='delete-gambar.php?id_gambar=" + d.gambar[x].id_gambar + "&nm_gambar="+ d.gambar[x].nm_gambar +"' class='w3-button w3-red w3-small w3-right'>Hapus Gambar</a></p>");
+        gambar.push("<div class='w3-clear'></div><br/>");
+        gambar.push("</form>");
+        gambar.push("</p>");
+      }
+      gambar.push("</div></div>");
     }
-    gambar.push("</div></div>");
+  }else{
+    gambar.push("<div class='w3-third'><div class='w3-card-2'><img src='gambar/no-image.png' class='w3-image w3-padding' style='height:250px;' /></div></div>");
   }
+  gambar.push('</div>');
   if(auth.getUserInfo()){
     el("button_delete_marker").style.display = "inline-block";
     el("button_edit_marker").style.display = "inline-block";
@@ -167,7 +172,6 @@ my_event_map.prototype.getDetailMarker = function(d){
     el("button_delete_marker").style.display = "none";
     el("button_edit_marker").style.display = "none";
   }
-  gambar.push('</div>');
   el("gambar_marker").innerHTML = gambar.join("");
   el("modal_detail_marker").style.display = "block"
 };
