@@ -5,7 +5,7 @@ require_once("config/database.php");
 <!DOCTYPE html>
 <html>
  <head>
-	<title>Eventos Events</title>
+	<title>Contoh Penggunaan Marker LeafletJS</title>
 	<meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="shortcut icon" href="dist/css/images/icon.ico" />

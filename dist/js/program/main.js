@@ -31,6 +31,9 @@ map.on('pm:create', function(e){
       el("modal_tambah_marker").style.display = 'block';
     }
   });
-var locate = setInterval(event_map.initUserLocation, 3500)
+//~ var locate = setInterval(event_map.initUserLocation, 3500)
+var locate = null
 auth.cekAuth();
 el("button_simpan_marker").disabled = true;
+
+event_map.searchMarkerByCircle({lat: -6.121435	, lng: 106.774124	});

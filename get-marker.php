@@ -1,20 +1,6 @@
 <?php
 session_start();
-if(isset($_GET['lat']) && isset($_GET['lng'])){
-  // Radius lingkaran 1 km
-  $radius_lingkaran = 1;
-  if(isset($_GET['rad'])){
-    if($_GET['rad'] > 20){
-      $radius_lingkaran = 20;
-    }else{
-      $radius_lingkaran = round($_GET['rad'],1);   
-    }
-  }
-  $id_user = "";
-  if(isset($_SESSION['id_user'])) $id_user = " AND a.id_user = ".$_SESSION['id_user'];
-  require_once("config/database.php");
-  $latitude = $db->quote(round($_GET['lat'], 6));
-  $longitude = $db->quote(round($_GET['lng'], 6));
+require_once("config/database.php");
   $cari = "";
     if(isset($_GET['filter']) && isset($_GET['cari'])){
       switch($_GET['filter']){
@@ -32,14 +18,12 @@ if(isset($_GET['lat']) && isset($_GET['lng'])){
           break;
       }
     }
-  $sql = "SELECT a.*,b.username, (((acos(sin((".$latitude."*pi()/180))*sin((a.koordinat_lat*pi()/180))+cos((".$latitude."*pi()/180))*cos((a.koordinat_lat*pi()/180)) * cos(((".$longitude."- a.koordinat_lng)*pi()/180))))*180/pi())*60*1.1515*1.609344) as jarak from tbl_tempat a join tbl_user b on a.id_user = b.id_user WHERE (((acos(sin((".$latitude."*pi()/180))*sin((a.koordinat_lat*pi()/180))+cos((".$latitude."*pi()/180))*cos((a.koordinat_lat*pi()/180)) * cos(((".$longitude."- a.koordinat_lng)*pi()/180))))*180/pi())*60*1.1515*1.609344) <= ".$radius_lingkaran.$id_user.$cari;
+  //$sql = "SELECT a.*,b.username, (((acos(sin((".$latitude."*pi()/180))*sin((a.koordinat_lat*pi()/180))+cos((".$latitude."*pi()/180))*cos((a.koordinat_lat*pi()/180)) * cos(((".$longitude."- a.koordinat_lng)*pi()/180))))*180/pi())*60*1.1515*1.609344) as jarak from tbl_tempat a join tbl_user b on a.id_user = b.id_user WHERE (((acos(sin((".$latitude."*pi()/180))*sin((a.koordinat_lat*pi()/180))+cos((".$latitude."*pi()/180))*cos((a.koordinat_lat*pi()/180)) * cos(((".$longitude."- a.koordinat_lng)*pi()/180))))*180/pi())*60*1.1515*1.609344) <= ".$radius_lingkaran.$id_user.$cari;
+  $sql = "SELECT a.*,b.username from tbl_tempat a join tbl_user b on a.id_user = b.id_user WHERE 1".$cari;
   $hasil = $db->sql($sql)->many();
   $banyak = count($hasil); 
   for($x = 0; $x < $banyak; $x++){
     $hasil[$x]['gambar'] = $db->from('tbl_gambar_tempat')->where('id_tempat', $hasil[$x]['id_tempat'])->select("id_gambar, nm_gambar")->many();
   }
   echo json_encode($hasil);
-}else{
-  echo "Anda dilarang mengakses halaman ini!";
-}
 ?>

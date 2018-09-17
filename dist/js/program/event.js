@@ -260,7 +260,7 @@ my_event_map.prototype.initUserLocation = function(){
           }
           
           el("button_search").style.display = "block";
-          event_map.searchMarkerByCircle(pos);
+          //~ event_map.searchMarkerByCircle(pos);
           posisi.setLatLng(pos).addTo(map); //set marker
           pinggiran_lingkaran.setLatLng(latLngFromPointWithDistance(pos.lat, pos.lng, MkeKm(radius_lingkaran), 90)).addTo(map); //set marker penggeser lingkaran
           lingkaran.setLatLng(pos).setRadius(radius_lingkaran).addTo(map) //set lingkaran
